@@ -20,13 +20,13 @@ constexpr auto dataClassesTemplate =
 ##   if isObject(value)
   {{ upper(key) }} {{ key }};
 ##   else if isArray(value)
-##     if isBoolean(value.1)
+##     if isBoolean(value.0)
   std::vector<bool> {{ key }};
-##     else if isFloat(value.1)
+##     else if isFloat(value.0)
   std::vector<double> {{ key }};
-##     else if isInteger(value.1)
+##     else if isInteger(value.0)
   std::vector<int> {{ key }};
-##     else if isString(value.1)
+##     else if isString(value.0)
   std::vector<std::string> {{ key }};
 ##     endif
 ##   else if isBoolean(value)
@@ -66,13 +66,13 @@ constexpr auto rootTemplate =
     fromJson(j.value("$$ childKey $$", nlohmann::json{{"$$ childKey $$", {}}}), root.$$ childKey $$);
 ##     else if isArray(childValue)
     root.$$ childKey $$ = j.value("$$ childKey $$",
-##       if isBoolean(childValue.1)
+##       if isBoolean(childValue.0)
     std::vector<bool>{
-##       else if isFloat(childValue.1)
+##       else if isFloat(childValue.0)
     std::vector<double>{
-##       else if isInteger(childValue.1)
+##       else if isInteger(childValue.0)
     std::vector<int>{
-##       else if isString(childValue.1)
+##       else if isString(childValue.0)
     std::vector<std::string>{
 ##       endif
 ##       for element in childValue
@@ -129,13 +129,13 @@ constexpr auto implementationBodyTemplate =
     fromJson(j.value("$$ childKey $$", nlohmann::json{{"$$ childKey $$", {}}}), $$ key $$.$$ childKey $$);
 ##       else if isArray(childValue)
     $$ key $$.$$ childKey $$ = j.value("$$ childKey $$",
-##         if isBoolean(childValue.1)
+##         if isBoolean(childValue.0)
     std::vector<bool>{
-##         else if isFloat(childValue.1)
+##         else if isFloat(childValue.0)
     std::vector<double>{
-##         else if isInteger(childValue.1)
+##         else if isInteger(childValue.0)
     std::vector<int>{
-##         else if isString(childValue.1)
+##         else if isString(childValue.0)
     std::vector<std::string>{
 ##         endif
 ##         for element in childValue
