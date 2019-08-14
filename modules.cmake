@@ -1,0 +1,4 @@
+set(MODULES
+        "ConfigCraft"
+        "JSON"
+        )
