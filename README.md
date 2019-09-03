@@ -29,6 +29,6 @@ ConfigJSON cfg;
 cfg.parse(cfg);
 ```
 
-Your configuration can be retrieved with `cfg.getRoot()`, that returns a type `ROOT` defined in `Config.hpp`.
+Your configuration can be retrieved with `cfg.getRoot()`, which returns a type `ROOT` defined in `Config.hpp`.
 
 **Currently only C++ and JSON are supported: contributions are welcome**
