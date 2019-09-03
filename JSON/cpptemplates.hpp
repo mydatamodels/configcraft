@@ -28,6 +28,8 @@ constexpr auto dataClassesTemplate =
   std::vector<int> {{ key }};
 ##     else if isString(value.0)
   std::vector<std::string> {{ key }};
+##     else if isObject(value.0)
+  std::vector<nlohmann::json> {{ key }};
 ##     endif
 ##   else if isBoolean(value)
   bool {{ key }};
@@ -74,12 +76,28 @@ constexpr auto rootTemplate =
     std::vector<int>{
 ##       else if isString(childValue.0)
     std::vector<std::string>{
+##       else if isObject(childValue.0)
+    std::vector<nlohmann::json>{
 ##       endif
 ##       for element in childValue
-##         if not loop.is_last
-      $$ element $$,
+##         if isString(childValue.0)
+##           if not loop.is_last
+      "$$ element $$",
+##           else
+      "$$ element $$"});
+##           endif
+##         else if isObject(childValue.0)
+##           if not loop.is_last
+      R"~($$ element $$)~",
+##           else
+      R"~("$$ element $$)~"});
+##           endif
 ##         else
+##           if not loop.is_last
+      $$ element $$,
+##           else
       $$ element $$});
+##           endif
 ##         endif
 ##       endfor
 ##     else if isBoolean(childValue)
@@ -137,12 +155,28 @@ constexpr auto implementationBodyTemplate =
     std::vector<int>{
 ##         else if isString(childValue.0)
     std::vector<std::string>{
+##         else if isObject(childValue.0)
+    std::vector<nlohmann::json>{
 ##         endif
 ##         for element in childValue
-##           if not loop.is_last
-      $$ element $$,
+##           if isString(childValue.0)
+##             if not loop.is_last
+      "$$ element $$",
+##             else
+      "$$ element $$"});
+##             endif
+##           else if isObject(childValue.0)
+##             if not loop.is_last
+      R"~($$ element $$)~",
+##             else
+      R"~("$$ element $$)~"});
+##             endif
 ##           else
+##             if not loop.is_last
+      $$ element $$,
+##             else
       $$ element $$});
+##             endif
 ##           endif
 ##         endfor
 ##       else if isBoolean(childValue)
@@ -160,6 +194,6 @@ constexpr auto implementationBodyTemplate =
 )";
 
 constexpr auto implementationHeadTemplate =
-R"(#include "ConfigJSON.hpp"
+    R"(#include "ConfigJSON.hpp"
 
 )";
