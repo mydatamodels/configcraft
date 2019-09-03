@@ -1,5 +1,4 @@
 # configcraft
-Configuration file parsing code generator
 
 **configcraft** takes an example configuration file, and it generates a working parsing code with default values taken from the input file.
 
