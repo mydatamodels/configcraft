@@ -29,6 +29,8 @@ std::vector<std::string> renderDataClasses(const nlohmann::json &object) {
 
   inja::Environment env;
   env.add_callback("sanitize", 1, &sanitize);
+  env.add_callback("upperFirst", 1, &upperFirst);
+  env.add_callback("lowerFirst", 1, &lowerFirst);
 
   classes.push_back(env.render(dataClassesTemplate, object));
 
@@ -57,6 +59,8 @@ std::string renderDataInclude(const nlohmann::json &object) {
 std::string renderDefinitions(const nlohmann::json &object) {
   inja::Environment env;
   env.add_callback("sanitize", 1, &sanitize);
+  env.add_callback("upperFirst", 1, &upperFirst);
+  env.add_callback("lowerFirst", 1, &lowerFirst);
 
   auto out = env.render(definitionsTemplate, object);
 
@@ -75,6 +79,8 @@ std::string renderDefinitions(const nlohmann::json &object) {
 std::string renderParseRoot(const nlohmann::json &object) {
   inja::Environment env;
   env.add_callback("sanitize", 1, &sanitize);
+  env.add_callback("upperFirst", 1, &upperFirst);
+  env.add_callback("lowerFirst", 1, &lowerFirst);
   env.set_expression("$$", "$$");
 
   auto out = env.render(rootTemplate, object);
@@ -99,6 +105,8 @@ std::string renderInclude(const nlohmann::json &object) {
 std::string renderImplementations(const nlohmann::json &object) {
   inja::Environment env;
   env.add_callback("sanitize", 1, &sanitize);
+  env.add_callback("upperFirst", 1, &upperFirst);
+  env.add_callback("lowerFirst", 1, &lowerFirst);
   env.set_expression("$$", "$$");
 
   auto out = env.render(implementationBodyTemplate, object);
@@ -135,7 +143,6 @@ void craft(const std::string &filename) {
   auto implementation = std::ofstream("ConfigJSON.cpp");
   implementation << renderImplementation(root) << "\n";
 }
-
 } // namespace cpp
 } // namespace json
 } // namespace configcraft
