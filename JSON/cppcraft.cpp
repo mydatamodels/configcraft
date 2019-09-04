@@ -27,7 +27,10 @@ namespace cpp {
 std::vector<std::string> renderDataClasses(const nlohmann::json &object) {
   static auto classes = std::vector<std::string>();
 
-  classes.push_back(inja::render(dataClassesTemplate, object));
+  inja::Environment env;
+  env.add_callback("sanitize", 1, &sanitize);
+
+  classes.push_back(env.render(dataClassesTemplate, object));
 
   for (auto &[key, value] : object["root"].items()) {
     if (value.is_object()) {
@@ -52,7 +55,10 @@ std::string renderDataInclude(const nlohmann::json &object) {
 }
 
 std::string renderDefinitions(const nlohmann::json &object) {
-  auto out = inja::render(definitionsTemplate, object);
+  inja::Environment env;
+  env.add_callback("sanitize", 1, &sanitize);
+
+  auto out = env.render(definitionsTemplate, object);
 
   for (auto &[key, value] : object["root"].items()) {
     if (value.is_object()) {
@@ -68,6 +74,7 @@ std::string renderDefinitions(const nlohmann::json &object) {
 
 std::string renderParseRoot(const nlohmann::json &object) {
   inja::Environment env;
+  env.add_callback("sanitize", 1, &sanitize);
   env.set_expression("$$", "$$");
 
   auto out = env.render(rootTemplate, object);
@@ -91,6 +98,7 @@ std::string renderInclude(const nlohmann::json &object) {
 
 std::string renderImplementations(const nlohmann::json &object) {
   inja::Environment env;
+  env.add_callback("sanitize", 1, &sanitize);
   env.set_expression("$$", "$$");
 
   auto out = env.render(implementationBodyTemplate, object);

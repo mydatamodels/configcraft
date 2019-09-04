@@ -14,31 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <inja/environment.hpp>
+
+auto sanitize(inja::Arguments &args) {
+  std::string str = args.at(0)->get<std::string>();
+  str.erase(std::remove_if(str.begin(), str.end(),
+                           [](auto c) { return !std::isalnum(c) && c != '_'; }),
+            str.end());
+  return str;
+}
+
 constexpr auto dataClassesTemplate =
-    R"(struct {{ upper(name) }} {
+    R"(struct {{ upper(sanitize(name)) }} {
 ## for key, value in root
 ##   if isObject(value)
-  {{ upper(key) }} {{ key }};
+  {{ upper(sanitize(key)) }} {{ sanitize(key) }};
 ##   else if isArray(value)
 ##     if isBoolean(value.0)
-  std::vector<bool> {{ key }};
+  std::vector<bool> {{ sanitize(key) }};
 ##     else if isFloat(value.0)
-  std::vector<double> {{ key }};
+  std::vector<double> {{ sanitize(key) }};
 ##     else if isInteger(value.0)
-  std::vector<int> {{ key }};
+  std::vector<int> {{ sanitize(key) }};
 ##     else if isString(value.0)
-  std::vector<std::string> {{ key }};
+  std::vector<std::string> {{ sanitize(key) }};
 ##     else if isObject(value.0)
-  std::vector<nlohmann::json> {{ key }};
+  std::vector<nlohmann::json> {{ sanitize(key) }};
 ##     endif
 ##   else if isBoolean(value)
-  bool {{ key }};
+  bool {{ sanitize(key) }};
 ##   else if isFloat(value)
-  double {{ key }};
+  double {{ sanitize(key) }};
 ##   else if isInteger(value)
-  int {{ key }};
+  int {{ sanitize(key) }};
 ##   else if isString(value)
-  std::string {{ key }};
+  std::string {{ sanitize(key) }};
 ##   endif
 ## endfor
 };
@@ -56,7 +66,7 @@ constexpr auto dataIncludeTemplate =
 constexpr auto definitionsTemplate =
     R"(## for key, value in root
 ##   if isObject(value)
-  void fromJson(const nlohmann::json &j, {{ upper(key) }} &{{ key }});
+  void fromJson(const nlohmann::json &j, {{ upper(sanitize(key)) }} &{{ sanitize(key) }});
 
 ##   endif
 ## endfor)";
@@ -65,9 +75,9 @@ constexpr auto rootTemplate =
     R"(
 ##   for childKey, childValue in root
 ##     if isObject(childValue)
-    fromJson(j.value("$$ childKey $$", nlohmann::json{{"$$ childKey $$", {}}}), root.$$ childKey $$);
+    fromJson(j.value("$$ sanitize(childKey) $$", nlohmann::json{{"$$ sanitize(childKey) $$", {}}}), root.$$ sanitize(childKey) $$);
 ##     else if isArray(childValue)
-    root.$$ childKey $$ = j.value("$$ childKey $$",
+    root.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$",
 ##       if isBoolean(childValue.0)
     std::vector<bool>{
 ##       else if isFloat(childValue.0)
@@ -80,13 +90,7 @@ constexpr auto rootTemplate =
     std::vector<nlohmann::json>{
 ##       endif
 ##       for element in childValue
-##         if isString(childValue.0)
-##           if not loop.is_last
-      "$$ element $$",
-##           else
-      "$$ element $$"});
-##           endif
-##         else if isObject(childValue.0)
+##         if isString(childValue.0) or isObject(childValue.0)
 ##           if not loop.is_last
       R"~($$ element $$)~",
 ##           else
@@ -101,11 +105,11 @@ constexpr auto rootTemplate =
 ##         endif
 ##       endfor
 ##     else if isBoolean(childValue)
-    root.$$ childKey $$ = j.value("$$ childKey $$", $$ childValue $$);
+    root.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", $$ childValue $$);
 ##     else if isNumber(childValue)
-    root.$$ childKey $$ = j.value("$$ childKey $$", $$ childValue $$);
+    root.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", $$ childValue $$);
 ##     else if isString(childValue)
-    root.$$ childKey $$ = j.value("$$ childKey $$", std::string("$$ childValue $$"));
+    root.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", std::string(R"~($$ childValue $$)~"));
 ##     endif
 ##   endfor
 )";
@@ -141,12 +145,12 @@ constexpr auto includeTailTemplate =
 constexpr auto implementationBodyTemplate =
     R"(## for key, value in root
 ##   if isObject(value)
-  void ConfigJSON::fromJson(const nlohmann::json &j, $$ upper(key) $$ &$$ key $$) {
+  void ConfigJSON::fromJson(const nlohmann::json &j, $$ upper(sanitize(key)) $$ &$$ sanitize(key) $$) {
 ##     for childKey, childValue in value
 ##       if isObject(childValue)
-    fromJson(j.value("$$ childKey $$", nlohmann::json{{"$$ childKey $$", {}}}), $$ key $$.$$ childKey $$);
+    fromJson(j.value("$$ sanitize(childKey) $$", nlohmann::json{{"$$ sanitize(childKey) $$", {}}}), $$ sanitize(key) $$.$$ sanitize(childKey) $$);
 ##       else if isArray(childValue)
-    $$ key $$.$$ childKey $$ = j.value("$$ childKey $$",
+    $$ sanitize(key) $$.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$",
 ##         if isBoolean(childValue.0)
     std::vector<bool>{
 ##         else if isFloat(childValue.0)
@@ -159,16 +163,10 @@ constexpr auto implementationBodyTemplate =
     std::vector<nlohmann::json>{
 ##         endif
 ##         for element in childValue
-##           if isString(childValue.0)
-##             if not loop.is_last
-      "$$ element $$",
-##             else
-      "$$ element $$"});
-##             endif
-##           else if isObject(childValue.0)
+##           if isString(childValue.0) or isObject(childValue.0)
 ##             if not loop.is_last
       R"~($$ element $$)~",
-##             else
+##           else
       R"~("$$ element $$)~"});
 ##             endif
 ##           else
@@ -180,11 +178,11 @@ constexpr auto implementationBodyTemplate =
 ##           endif
 ##         endfor
 ##       else if isBoolean(childValue)
-    $$ key $$.$$ childKey $$ = j.value("$$ childKey $$", $$ childValue $$);
+    $$ sanitize(key) $$.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", $$ childValue $$);
 ##       else if isNumber(childValue)
-    $$ key $$.$$ childKey $$ = j.value("$$ childKey $$", $$ childValue $$);
+    $$ sanitize(key) $$.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", $$ childValue $$);
 ##       else if isString(childValue)
-    $$ key $$.$$ childKey $$ = j.value("$$ childKey $$", std::string("$$ childValue $$"));
+    $$ sanitize(key) $$.$$ sanitize(childKey) $$ = j.value("$$ sanitize(childKey) $$", std::string(R"~($$ childValue $$)~"));
 ##       endif
 ##     endfor
   }
